@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TodoAPI - 待办事项管理</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <!-- ===== 登录注册页 ===== -->
+  <div id="authView" class="auth-view">
+    <div class="auth-card">
+      <h1 class="auth-title">📝 TodoAPI</h1>
+      <p class="auth-subtitle">待办事项管理系统</p>
+
+      <!-- 登录/注册切换标签 -->
+      <div class="auth-tabs">
+        <button class="tab-btn active" data-tab="login">登录</button>
+        <button class="tab-btn" data-tab="register">注册</button>
+      </div>
+
+      <!-- 登录表单 -->
+      <form id="loginForm" class="auth-form active">
+        <div class="form-group">
+          <label>用户名</label>
+          <input type="text" id="loginUsername" placeholder="请输入用户名" required>
+        </div>
+        <div class="form-group">
+          <label>密码</label>
+          <input type="password" id="loginPassword" placeholder="请输入密码" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">登 录</button>
+        <div id="loginMsg" class="form-msg"></div>
+      </form>
+
+      <!-- 注册表单 -->
+      <form id="registerForm" class="auth-form">
+        <div class="form-group">
+          <label>用户名</label>
+          <input type="text" id="regUsername" placeholder="3-50个字符" required>
+        </div>
+        <div class="form-group">
+          <label>昵称</label>
+          <input type="text" id="regNickname" placeholder="选填">
+        </div>
+        <div class="form-group">
+          <label>密码</label>
+          <input type="password" id="regPassword" placeholder="6-50个字符" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">注 册</button>
+        <div id="registerMsg" class="form-msg"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===== 主页面（任务管理） ===== -->
+  <div id="mainView" class="main-view hidden">
+    <!-- 顶部导航 -->
+    <header class="top-bar">
+      <div class="top-bar-inner">
+        <div class="logo">📝 TodoAPI</div>
+        <div class="user-info">
+          <span id="userNickname" class="user-nickname"></span>
+          <button id="logoutBtn" class="btn btn-outline">退出登录</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="container">
+      <!-- 统计卡片 -->
+      <section class="stats-section">
+        <div class="stat-card stat-total">
+          <div class="stat-number" id="statTotal">0</div>
+          <div class="stat-label">全部任务</div>
+        </div>
+        <div class="stat-card stat-pending">
+          <div class="stat-number" id="statPending">0</div>
+          <div class="stat-label">待开始</div>
+        </div>
+        <div class="stat-card stat-progress">
+          <div class="stat-number" id="statProgress">0</div>
+          <div class="stat-label">进行中</div>
+        </div>
+        <div class="stat-card stat-done">
+          <div class="stat-number" id="statDone">0</div>
+          <div class="stat-label">已完成</div>
+        </div>
+      </section>
+
+      <!-- 操作栏：新增按钮 + 筛选 -->
+      <section class="action-bar">
+        <button id="addTaskBtn" class="btn btn-primary">+ 新建任务</button>
+
+        <div class="filters">
+          <select id="filterStatus" class="filter-select">
+            <option value="">全部状态</option>
+            <option value="pending">待开始</option>
+            <option value="in_progress">进行中</option>
+            <option value="completed">已完成</option>
+            <option value="cancelled">已取消</option>
+          </select>
+          <select id="filterPriority" class="filter-select">
+            <option value="">全部优先级</option>
+            <option value="high">高</option>
+            <option value="medium">中</option>
+            <option value="low">低</option>
+          </select>
+          <select id="sortBy" class="filter-select">
+            <option value="created_at">按创建时间</option>
+            <option value="priority">按优先级</option>
+            <option value="due_date">按截止日期</option>
+            <option value="updated_at">按更新时间</option>
+          </select>
+          <select id="sortOrder" class="filter-select">
+            <option value="desc">降序</option>
+            <option value="asc">升序</option>
+          </select>
+          <input type="text" id="searchInput" class="search-input" placeholder="搜索任务标题...">
+        </div>
+      </section>
+
+      <!-- 任务列表 -->
+      <section class="task-list" id="taskList">
+        <!-- 任务项由 JS 动态生成 -->
+      </section>
+
+      <!-- 分页 -->
+      <section class="pagination" id="pagination">
+        <!-- 分页按钮由 JS 动态生成 -->
+      </section>
+    </main>
+  </div>
+
+  <!-- ===== 新建/编辑任务弹窗 ===== -->
+  <div id="taskModal" class="modal hidden">
+    <div class="modal-mask"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modalTitle">新建任务</h3>
+        <button class="modal-close" id="modalClose">&times;</button>
+      </div>
+      <form id="taskForm" class="modal-body">
+        <input type="hidden" id="taskId">
+        <div class="form-group">
+          <label>任务标题 <span class="required">*</span></label>
+          <input type="text" id="taskTitle" placeholder="请输入任务标题" required>
+        </div>
+        <div class="form-group">
+          <label>任务描述</label>
+          <textarea id="taskDesc" rows="3" placeholder="任务详细描述（选填）"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>优先级</label>
+            <select id="taskPriority">
+              <option value="low">低</option>
+              <option value="medium" selected>中</option>
+              <option value="high">高</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>状态</label>
+            <select id="taskStatus">
+              <option value="pending">待开始</option>
+              <option value="in_progress">进行中</option>
+              <option value="completed">已完成</option>
+              <option value="cancelled">已取消</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>分类</label>
+            <input type="text" id="taskCategory" placeholder="如：工作、学习">
+          </div>
+          <div class="form-group">
+            <label>截止日期</label>
+            <input type="date" id="taskDueDate">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" id="modalCancel">取消</button>
+          <button type="submit" class="btn btn-primary">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===== Toast 提示 ===== -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>
